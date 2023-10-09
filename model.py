@@ -73,7 +73,18 @@ b2 = np.random.rand(d_model)
 def relu(x):
     return np.maximum(x, 0)
 
-def feed_forward(X):
-    out =  np.dot(relu(np.dot(X, W1) + b1), W2) + b2
-    norm = layer_norm(out, gamma, beta)
-    return X + norm
+class LinearLayer():
+    def __init__(self, rows, columns, lr=.01):
+        self.rows = rows
+        self.columns = columns
+        self.lr = lr
+        self.W = np.random.rand(rows, columns)
+
+    def forward(self, X):
+        self.X = X
+        return np.dot(X, self.W)
+
+    def backwards(self, grad):
+        dW = np.dot(grad, self.X.T)
+        self.W -= self.lr * dW
+        return np.dot(grad, self.W.T)
