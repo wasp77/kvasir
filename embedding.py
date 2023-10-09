@@ -112,6 +112,23 @@ def embed(tokens, token_to_id):
         embeddings[pos] = embedding_matrix[id] + positional_matrix[pos]
     return embeddings
 
+class EmbeddingLayer():
+    def __init__(self, vocab_size, d_model=128, lr=0.01):
+        self.vocab_size = vocab_size
+        self.d_model = d_model
+        self.lr = lr
+        self.embedding_matrix = np.random.rand(vocab_size,d_model)
+        self.positional_matrix = gen_positional_matrix()
+    
+    def forward(self, id, pos):
+        self.id = id
+        self.pos = pos
+        return self.embedding_matrix[id] + self.positional_matrix[pos]
+
+    def backward(self, grad):
+        self.embedding_matrix[self.id] -= self.lr * grad
+
+
 
 with open('./shakespeare.txt') as f:
     text = f.read()
