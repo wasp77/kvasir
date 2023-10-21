@@ -263,5 +263,15 @@ class SimpleTransformer():
 
         self.embedding_layer.backwards(grad, self.tokens)
 
+    def generate(self, context, max_new_tokens):
+        for _ in range(max_new_tokens):
+            logits = self.forward(context)
+            probs = softmax(logits)
+            idx_next = np.argmax(probs, axis=1)
+            last_idx_next = idx_next[-1]
+            context = np.append(context, last_idx_next)
+        return context
+
+
     def get_token_mapping(self):
         return self.embedding_layer.token_to_id
