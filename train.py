@@ -2,6 +2,9 @@ import numpy as np
 from embedding import clean_text, get_sequences, count_tokens, filter_n, sort_tokens_by_count, tokenize, V, UNKNOWN_TOKEN
 from model import SimpleTransformer, CategoricalCrossEntropyLoss
 
+# AVG sentence length in english
+SEQ_LEN = 16
+
 
 def shift_and_one_hot(y, vocab_size, token_mapping):
     shifted_y = np.roll(y, shift=-1, axis=0)
@@ -14,13 +17,13 @@ with open('./shakespeare.txt') as f:
     text = f.read()
     text = clean_text(text)
     tokens = tokenize(text)
-    seqs = get_sequences(tokens)
+    seqs = get_sequences(tokens, SEQ_LEN)
     counts = count_tokens(tokens)
     counts = filter_n(counts)
     sorted_tokens = sort_tokens_by_count(counts)
 
 
-model = SimpleTransformer(vocab_size=V, tokens=sorted_tokens)
+model = SimpleTransformer(vocab_size=V, tokens=sorted_tokens, seq_len=SEQ_LEN)
 loss_func = CategoricalCrossEntropyLoss()
 token_mapping = model.get_token_mapping()
 
