@@ -146,15 +146,18 @@ class EmbeddingLayer():
         self.token_to_id[UNKNOWN_TOKEN] = id_counter
         self.id_to_token[id_counter] = UNKNOWN_TOKEN
 
-    def forward(self, token, pos):
-        if token not in self.token_to_id:
-            self.id = self.token_to_id[UNKNOWN_TOKEN]
-        else:
-            self.id = self.token_to_id[token]
-        self.pos = pos
-        embedding = self.embedding_matrix[self.id] 
-        position_embedding = self.positional_matrix[pos]
-        return embedding + position_embedding
+    def forward(self, seq):
+        embeddings = np.zeros((SEQ_LEN + 1, self.d_model))
+        for pos, token in enumerate(seq):
+            if token not in self.token_to_id:
+                self.id = self.token_to_id[UNKNOWN_TOKEN]
+            else:
+                self.id = self.token_to_id[token]
+            self.pos = pos
+            embedding = self.embedding_matrix[self.id] 
+            position_embedding = self.positional_matrix[pos]
+            embeddings[pos] = embedding + position_embedding
+        return embeddings 
 
 
     def backwards(self, grad, tokens):

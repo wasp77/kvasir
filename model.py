@@ -230,9 +230,7 @@ class SimpleTransformer():
 
     def forward(self, seq):
         self.tokens = seq
-        embeddings = np.zeros((SEQ_LEN + 1, self.d_model))
-        for pos, token in enumerate(seq):
-            embeddings[pos] = self.embedding_layer.forward(token, pos)
+        embeddings = self.embedding_layer.forward(self.tokens)
         X = self.attention_head.forward(embeddings)
         X = self.norm_layer1.forward(X)
         X = self.feed_forward.forward(X)
