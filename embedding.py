@@ -1,4 +1,3 @@
-import re
 import numpy as np
 import math
 
@@ -23,45 +22,6 @@ def gen_positional_matrix(seq_len):
     return positional_matrix
 
 
-def clean_text(text):
-    # Remove punctuation
-    text = re.sub(r'[^\w\s]', '', text)
-    # Remove extra spaces
-    text = re.sub(r'\s+', ' ', text).strip()
-    # Convert double new lines to single new lines
-    text = re.sub(r'\n+', '\n', text)
-    # Make everthing lowercase
-    text = text.lower()
-    return text
-
-
-def tokenize(text):
-    return text.split()
-
-
-def count_tokens(tokens):
-    count_map = {}
-    for token in tokens:
-        if token in count_map:
-            count_map[token] += 1
-        else:
-            count_map[token] = 1
-    return count_map
-
-
-def filter_n(counts, n=5):
-    filtered_counts = {}
-    for (key, value) in counts.items():
-        if value > n:
-            filtered_counts[key] = value
-    return filtered_counts
-
-
-def sort_tokens_by_count(counts):
-    tuples = list(counts.items())
-    return sorted(tuples, key=lambda x: x[1], reverse=True)
-
-
 def gen_ids(tokens):
     token_to_id = {}
     id_to_token = {}
@@ -79,29 +39,6 @@ def gen_ids(tokens):
     token_to_id[UNKNOWN_TOKEN] = id_counter
     id_to_token[id_counter] = UNKNOWN_TOKEN
     return token_to_id, id_to_token
-
-
-def get_sequences(text, seq_len):
-    sequences = []
-    sequence = []
-    count = 0
-    for token in text:
-        # Allow for EOS at the end
-        if count < seq_len - 1:
-            sequence.append(token)
-            count += 1
-        else:
-            sequence.append(END_TOKEN)
-            sequences.append(sequence)
-            sequence = [token]
-            count = 1
-    if len(sequence) < seq_len:
-        diff = seq_len - len(sequence)
-        padding = [PADDING_TOKEN] * diff
-        sequence.extend(padding)
-        sequence.append(END_TOKEN)
-        sequences.append(sequence)
-    return sequences
 
 
 class EmbeddingLayer():

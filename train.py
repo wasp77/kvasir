@@ -1,6 +1,7 @@
 import numpy as np
-from embedding import clean_text, get_sequences, count_tokens, filter_n, sort_tokens_by_count, tokenize, V, UNKNOWN_TOKEN
+from embedding import V, UNKNOWN_TOKEN
 from model import SimpleTransformer, CategoricalCrossEntropyLoss
+from dataset import Dataset
 
 # AVG sentence length in english
 SEQ_LEN = 16
@@ -13,17 +14,17 @@ def shift_and_one_hot(y, vocab_size, token_mapping):
     one_hot_y = np.eye(vocab_size)[ids]
     return one_hot_y
 
-with open('./shakespeare.txt') as f:
-    text = f.read()
-    text = clean_text(text)
-    tokens = tokenize(text)
-    seqs = get_sequences(tokens, SEQ_LEN)
-    counts = count_tokens(tokens)
-    counts = filter_n(counts)
-    sorted_tokens = sort_tokens_by_count(counts)
+
+dataset = Dataset(text_path='./shakespeare.txt', n=5, seq_len=SEQ_LEN)
+sorted_tokens = dataset.sorted_tokens
+# Need to account for the special tokens
+vocab_size = dataset.vocab_size + 3
+seqs = dataset.seqs
+print(vocab_size)
 
 
-model = SimpleTransformer(vocab_size=V, tokens=sorted_tokens, seq_len=SEQ_LEN)
+model = SimpleTransformer(vocab_size=vocab_size,
+                          tokens=sorted_tokens, seq_len=SEQ_LEN)
 loss_func = CategoricalCrossEntropyLoss()
 token_mapping = model.get_token_mapping()
 
@@ -31,7 +32,7 @@ for epoch in range(2):
     epoch_loss = 0
     for seq in seqs:
         out = model.forward(seq=seq)
-        y_true = shift_and_one_hot(seq, V, token_mapping=token_mapping)
+        y_true = shift_and_one_hot(seq, vocab_size, token_mapping=token_mapping)
         loss = loss_func.calc_loss(output=out, y_true=y_true)
         epoch_loss += loss
         grad = loss_func.get_grad()
