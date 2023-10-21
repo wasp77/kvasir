@@ -29,12 +29,12 @@ def get_sequences(text, seq_len):
             sequences.append(sequence)
             sequence = [token]
             count = 1
-    if len(sequence) < seq_len:
-        diff = seq_len - len(sequence)
+    if len(sequence) < seq_len - 1:
+        diff = (seq_len - 1) - len(sequence)
         padding = [PADDING_TOKEN] * diff
         sequence.extend(padding)
-        sequence.append(END_TOKEN)
-        sequences.append(sequence)
+    sequence.append(END_TOKEN)
+    sequences.append(sequence)
     return sequences
 
 
