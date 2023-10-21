@@ -47,7 +47,8 @@ class EmbeddingLayer():
         self.d_model = d_model
         self.lr = lr
         self.seq_len = seq_len
-        self.embedding_matrix = np.random.rand(vocab_size, d_model)
+        limit = np.sqrt(1. / d_model)
+        self.embedding_matrix = np.random.uniform(-limit, limit, (vocab_size, d_model))
         self.positional_matrix = gen_positional_matrix(seq_len=seq_len)
 
     def gen_token_mapping(self, tokens):
