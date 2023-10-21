@@ -211,3 +211,12 @@ class CategoricalCrossEntropyLoss():
         return self.y_pred - self.y_true
 
 
+def gen_gradient_clip_scaler(grad, threshold=1.0):
+    square = np.square(grad)
+    sum = np.sum(square)
+    l2 = np.sqrt(sum)
+    if l2 > threshold:
+        return threshold / l2
+    return 1.0
+
+
