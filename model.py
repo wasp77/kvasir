@@ -241,7 +241,7 @@ class SimpleTransformer():
     def forward(self, seq):
         self.tokens = seq
         embeddings = self.embedding_layer.forward(self.tokens)
-        X = self.attention_head.forward(embeddings)
+        X = self.attention_head.forward(embeddings) + embeddings
         X = self.norm_layer1.forward(X)
         X = self.feed_forward.forward(X)
         X = self.norm_layer2.forward(X)
