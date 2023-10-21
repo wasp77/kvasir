@@ -178,13 +178,13 @@ relu_activation = ActivationFunc(
 
 
 class FeedForwardNetwork():
-    def __init__(self, input_size, output_size, vocab_size, lr=.01):
+    def __init__(self, d_model, vocab_size, lr=.01):
         self.input_layer = LinearLayer(
-            rows=input_size, columns=output_size, lr=lr)
+            rows=d_model, columns=4*d_model, lr=lr)
         self.hidden_layer = LinearLayer(
-            rows=output_size, columns=output_size, activation=relu_activation, lr=lr)
+            rows=4*d_model, columns=d_model, activation=relu_activation, lr=lr)
         self.output_layer = LinearLayer(
-            rows=output_size, columns=vocab_size, lr=lr)
+            rows=d_model, columns=vocab_size, lr=lr)
 
     def forward(self, X):
         X = self.input_layer.forward(X)
