@@ -17,6 +17,30 @@ def normalize(X, gamma=1, beta=0, epsilon=1e-6):
     return gamma * (X - mean) / (std_dev + epsilon) + beta
 
 
+class NormLayer():
+    def __init__(self, gamma=1, beta=0, epsilon=1e-6):
+        self.gamma = gamma
+        self.beta = beta
+        self.epsilon = epsilon
+
+    def forward(self, X):
+        self.X = X
+        self.mean = np.mean(X, axis=-1, keepdims=True)
+        self.std_dev = np.std(X, axis=-1, keepdims=True)
+        return self.gamma * (X - self.mean) / (self.std_dev + self.epsilon) + self.beta
+
+    def backwards(self, grad):
+        N = grad.shape[0]
+        dnorm = grad * self.gamma
+        dvar = np.sum(dnorm * (self.X - self.mean) * -0.5 *
+                      np.power(self.std_dev + self.epsilon, -1.5), axis=1, keepdims=True)
+        dmean = np.sum(dnorm * -1 / self.std_dev, axis=1, keepdims=True) + \
+            dvar * np.mean(-2*(self.X - self.mean), axis=1, keepdims=True)
+        dx = (dnorm / self.std_dev) + (dvar * 2 *
+                                       (self.X - self.mean) / N) + (dmean / N)
+        return dx
+
+
 class AttentionHead():
     def __init__(self, lr=.01, dk=64, d_model=128):
         self.lr = lr
