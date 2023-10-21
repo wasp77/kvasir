@@ -7,7 +7,8 @@ d_model = 128
 
 
 def softmax(x):
-    return np.exp(x) / np.sum(np.exp(x), axis=-1, keepdims=True)
+    e_x = np.exp(x - np.max(x, axis=-1, keepdims=True))
+    return e_x / e_x.sum(axis=-1, keepdims=True)
 
 
 def normalize(X, gamma=1, beta=0, epsilon=1e-6):
@@ -37,7 +38,7 @@ class AttentionHead():
         self.attention_weights = softmax(self.scaled_scores)
         return np.dot(self.attention_weights, self.V)
 
-    def backward(self, grad):
+    def backwards(self, grad):
         # gradient attention_weights
         da = np.dot(grad, self.V.T)
 

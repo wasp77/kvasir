@@ -14,6 +14,7 @@ d_model = 128
 # Vocab size
 V = 7816
 
+
 def gen_positional_matrix():
     positional_matrix = np.zeros((SEQ_LEN + 1, d_model))
     # We have a EOS token
@@ -24,7 +25,8 @@ def gen_positional_matrix():
             positional_matrix[pos][2*i + 1] = math.cos(pos/div_term)
     return positional_matrix
 
-embedding_matrix = np.random.rand(V,d_model)
+
+embedding_matrix = np.random.rand(V, d_model)
 positional_matrix = gen_positional_matrix()
 
 
@@ -39,8 +41,10 @@ def clean_text(text):
     text = text.lower()
     return text
 
+
 def tokenize(text):
     return text.split()
+
 
 def count_tokens(tokens):
     count_map = {}
@@ -51,6 +55,7 @@ def count_tokens(tokens):
             count_map[token] = 1
     return count_map
 
+
 def filter_n(counts, n=5):
     filtered_counts = {}
     for (key, value) in counts.items():
@@ -58,9 +63,11 @@ def filter_n(counts, n=5):
             filtered_counts[key] = value
     return filtered_counts
 
+
 def sort_tokens_by_count(counts):
     tuples = list(counts.items())
     return sorted(tuples, key=lambda x: x[1], reverse=True)
+
 
 def gen_ids(tokens):
     token_to_id = {}
@@ -79,6 +86,7 @@ def gen_ids(tokens):
     token_to_id[UNKNOWN_TOKEN] = id_counter
     id_to_token[id_counter] = UNKNOWN_TOKEN
     return token_to_id, id_to_token
+
 
 def get_sequences(text, sequence_len=SEQ_LEN):
     sequences = []
@@ -101,23 +109,24 @@ def get_sequences(text, sequence_len=SEQ_LEN):
         sequences.append(sequence)
     return sequences
 
+
 def embed(tokens, token_to_id):
     embeddings = np.zeros((SEQ_LEN + 1, d_model))
     for pos, token in enumerate(tokens):
         if token not in token_to_id:
-            print('handling unknown')
             id = token_to_id[UNKNOWN_TOKEN]
         else:
             id = token_to_id[token]
         embeddings[pos] = embedding_matrix[id] + positional_matrix[pos]
     return embeddings
 
+
 class EmbeddingLayer():
     def __init__(self, vocab_size, d_model=128, lr=0.01):
         self.vocab_size = vocab_size
         self.d_model = d_model
         self.lr = lr
-        self.embedding_matrix = np.random.rand(vocab_size,d_model)
+        self.embedding_matrix = np.random.rand(vocab_size, d_model)
         self.positional_matrix = gen_positional_matrix()
     
     def forward(self, id, pos):
