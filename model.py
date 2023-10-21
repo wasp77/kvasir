@@ -51,6 +51,10 @@ class AttentionHead():
         self.Wk = np.random.rand(d_model, dk)
         self.Wv = np.random.rand(d_model, dk)
 
+        self.temp_q_grad = None
+        self.temp_k_grad = None
+        self.temp_v_grad = None
+
     def forward(self, X):
         self.X = X
         self.Q = np.dot(X, self.Wq)
@@ -85,18 +89,33 @@ class AttentionHead():
         # weight grandients
         dWq = np.dot(self.X.T, dQ)
         dWk = np.dot(self.X.T, dK)
-        dWv = np.dot(self.X.T, dV)
+        dWv = np.dot(self.X.T, dV.T)
 
-        self.Wq -= self.lr * dWq
-        self.Wk -= self.lr * dWk
-        self.Wv -= self.lr * dWv
+        self.temp_q_grad = dWq
+        self.temp_k_grad = dWk
+        self.temp_v_grad = dWv
 
+        # self.Wq -= self.lr * dWq
+        # self.Wk -= self.lr * dWk
+        # self.Wv -= self.lr * dWv
 
-dff = 256
-W1 = np.random.rand(d_model, dff)
-b1 = np.random.rand(dff)
-W2 = np.random.rand(dff, d_model)
-b2 = np.random.rand(d_model)
+        dX_q = np.dot(dQ, self.Wq.T)
+        dX_k = np.dot(dK, self.Wk.T)
+        dX_v = np.dot(dV.T, self.Wv.T)
+
+        return dX_q + dX_k + dX_v
+
+    def update_weights(self, scaling_factor):
+        self.temp_q_grad *= scaling_factor
+        self.temp_k_grad *= scaling_factor
+        self.temp_v_grad *= scaling_factor
+
+        self.Wq -= self.lr * self.temp_q_grad
+        self.Wk -= self.lr * self.temp_k_grad
+        self.Wv -= self.lr * self.temp_v_grad
+
+    def get_grads(self):
+        return np.concatenate([self.temp_k_grad.ravel(), self.temp_q_grad.ravel(), self.temp_v_grad.ravel()])
 
 
 def relu(x):
@@ -121,8 +140,10 @@ class LinearLayer():
         self.rows = rows
         self.columns = columns
         self.lr = lr
-        self.W = np.random.rand(rows, columns)
+        # He initialization.
+        self.W = np.random.randn(rows, columns) * np.sqrt(2. / rows)
         self.activation = activation
+        self.temp_grad = None
 
     def forward(self, X):
         self.X = X
@@ -138,8 +159,12 @@ class LinearLayer():
             dz = grad
 
         dW = np.dot(self.X.T, dz)
-        self.W -= self.lr * dW
-        return np.dot(self.W, dz)
+        self.temp_grad = dW
+        return np.dot(self.W, dz.T).T
+
+    def update_weights(self, scaling_factor):
+        self.temp_grad *= scaling_factor
+        self.W -= self.lr * self.temp_grad
 
 
 relu_activation = ActivationFunc(
@@ -147,12 +172,13 @@ relu_activation = ActivationFunc(
 
 
 class FeedForwardNetwork():
-    def __init__(self, vocab_size, d_model, lr=.01):
-        self.input_layer = LinearLayer(rows=vocab_size, columns=d_model, lr=lr)
+    def __init__(self, input_size, output_size, vocab_size, lr=.01):
+        self.input_layer = LinearLayer(
+            rows=input_size, columns=output_size, lr=lr)
         self.hidden_layer = LinearLayer(
-            rows=d_model, columns=d_model, activation=relu_activation, lr=lr)
+            rows=output_size, columns=output_size, activation=relu_activation, lr=lr)
         self.output_layer = LinearLayer(
-            rows=d_model, columns=vocab_size, lr=lr)
+            rows=output_size, columns=vocab_size, lr=lr)
 
     def forward(self, X):
         X = self.input_layer.forward(X)
@@ -165,3 +191,11 @@ class FeedForwardNetwork():
         grad = self.hidden_layer.backwards(grad)
         grad = self.input_layer.backwards(grad)
         return grad
+
+    def get_grads(self):
+        return np.concatenate([self.input_layer.temp_grad.ravel(), self.hidden_layer.temp_grad.ravel(), self.output_layer.temp_grad.ravel()])
+
+    def update_weights(self, scaling_factor):
+        self.input_layer.update_weights(scaling_factor=scaling_factor)
+        self.hidden_layer.update_weights(scaling_factor=scaling_factor)
+        self.output_layer.update_weights(scaling_factor=scaling_factor)
