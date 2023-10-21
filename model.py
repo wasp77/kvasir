@@ -274,4 +274,4 @@ class SimpleTransformer():
 
 
     def get_token_mapping(self):
-        return self.embedding_layer.token_to_id
+        return self.embedding_layer.token_to_id, self.embedding_layer.id_to_token
