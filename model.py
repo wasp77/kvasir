@@ -1,9 +1,6 @@
 import numpy as np
 import math
-from embedding import EmbeddingLayer
-
-dk = 64
-d_model = 128
+from embedding import EmbeddingLayer, SEQ_LEN, clean_text, get_sequences, count_tokens, filter_n, sort_tokens_by_count, tokenize, V, UNKNOWN_TOKEN
 
 
 def softmax(x):
@@ -220,3 +217,77 @@ def gen_gradient_clip_scaler(grad, threshold=1.0):
     return 1.0
 
 
+class SimpleTransformer():
+    def __init__(self, vocab_size, tokens, d_model=128, dk=64, lr=0.01):
+        self.d_model = d_model
+        self.embedding_layer = EmbeddingLayer(vocab_size, d_model, lr)
+        self.feed_forward = FeedForwardNetwork(
+            input_size=dk, output_size=d_model, vocab_size=vocab_size, lr=lr)
+        self.attention_head = AttentionHead(d_model=d_model, lr=lr, dk=dk)
+        self.embedding_layer.gen_token_mapping(tokens)
+        self.norm_layer1 = NormLayer()
+        self.norm_layer2 = NormLayer()
+
+    def forward(self, seq):
+        self.tokens = seq
+        embeddings = np.zeros((SEQ_LEN + 1, self.d_model))
+        for pos, token in enumerate(seq):
+            embeddings[pos] = self.embedding_layer.forward(token, pos)
+        X = self.attention_head.forward(embeddings)
+        X = self.norm_layer1.forward(X)
+        X = self.feed_forward.forward(X)
+        X = self.norm_layer2.forward(X)
+        return X
+
+    def backwards(self, grad):
+        grad = self.norm_layer2.backwards(grad)
+        grad = self.feed_forward.backwards(grad)
+        grad = self.norm_layer1.backwards(grad)
+        grad = self.attention_head.backwards(grad)
+
+        grads = np.concatenate([grad.ravel(), self.feed_forward.get_grads(
+        ).ravel(), self.attention_head.get_grads().ravel()])
+        scaling_factor = gen_gradient_clip_scaler(grads)
+        self.feed_forward.update_weights(scaling_factor)
+        self.attention_head.update_weights(scaling_factor)
+        grad *= scaling_factor
+
+        self.embedding_layer.backwards(grad, self.tokens)
+
+    def get_token_mapping(self):
+        return self.embedding_layer.token_to_id
+
+
+def shift_and_one_hot(y, vocab_size, token_mapping):
+    shifted_y = np.roll(y, shift=-1, axis=0)
+    ids = np.array([token_mapping[token] if token in token_mapping else token_mapping[UNKNOWN_TOKEN]
+                   for token in shifted_y])
+    one_hot_y = np.eye(vocab_size)[ids]
+    return one_hot_y
+
+
+with open('./shakespeare.txt') as f:
+    text = f.read()
+    text = clean_text(text)
+    tokens = tokenize(text)
+    seqs = get_sequences(tokens)
+    counts = count_tokens(tokens)
+    counts = filter_n(counts)
+    sorted_tokens = sort_tokens_by_count(counts)
+
+
+model = SimpleTransformer(vocab_size=V, tokens=sorted_tokens)
+loss_func = CategoricalCrossEntropyLoss()
+token_mapping = model.get_token_mapping()
+
+for epoch in range(2):
+    epoch_loss = 0
+    for seq in seqs:
+        out = model.forward(seq=seq)
+        y_true = shift_and_one_hot(seq, V, token_mapping=token_mapping)
+        loss = loss_func.calc_loss(output=out, y_true=y_true)
+        epoch_loss += loss
+        grad = loss_func.get_grad()
+        model.backwards(grad)
+
+    print(f"Avg epoch loss: {epoch_loss / len(seqs)} for epoch: {epoch}")
