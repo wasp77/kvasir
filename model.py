@@ -230,9 +230,10 @@ def gen_gradient_clip_scaler(grad, threshold=1.0):
 class SimpleTransformer():
     def __init__(self, vocab_size, tokens, seq_len, d_model=128, dk=64, lr=0.01):
         self.d_model = d_model
-        self.embedding_layer = EmbeddingLayer(vocab_size=vocab_size, d_model=d_model, seq_len=seq_len, lr=lr)
+        self.embedding_layer = EmbeddingLayer(
+            vocab_size=vocab_size, d_model=d_model, seq_len=seq_len, lr=lr)
         self.feed_forward = FeedForwardNetwork(
-            input_size=dk, output_size=d_model, vocab_size=vocab_size, lr=lr)
+            d_model=d_model, vocab_size=vocab_size, lr=lr)
         self.attention_head = AttentionHead(d_model=d_model, lr=lr, dk=dk)
         self.embedding_layer.gen_token_mapping(tokens)
         self.norm_layer1 = NormLayer()
