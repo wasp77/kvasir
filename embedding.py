@@ -128,25 +128,39 @@ class EmbeddingLayer():
         self.lr = lr
         self.embedding_matrix = np.random.rand(vocab_size, d_model)
         self.positional_matrix = gen_positional_matrix()
-    
-    def forward(self, id, pos):
-        self.id = id
+
+    def gen_token_mapping(self, tokens):
+        self.token_to_id = {}
+        self.id_to_token = {}
+        id_counter = 0
+        for (token, count) in tokens:
+            self.token_to_id[token] = id_counter
+            self.id_to_token[id_counter] = token
+            id_counter += 1
+        self.token_to_id[PADDING_TOKEN] = id_counter
+        self.id_to_token[id_counter] = PADDING_TOKEN
+        id_counter += 1
+        self.token_to_id[END_TOKEN] = id_counter
+        self.id_to_token[id_counter] = END_TOKEN
+        id_counter += 1
+        self.token_to_id[UNKNOWN_TOKEN] = id_counter
+        self.id_to_token[id_counter] = UNKNOWN_TOKEN
+
+    def forward(self, token, pos):
+        if token not in self.token_to_id:
+            self.id = self.token_to_id[UNKNOWN_TOKEN]
+        else:
+            self.id = self.token_to_id[token]
         self.pos = pos
-        return self.embedding_matrix[id] + self.positional_matrix[pos]
-
-    def backward(self, grad):
-        self.embedding_matrix[self.id] -= self.lr * grad
-
+        embedding = self.embedding_matrix[self.id] 
+        position_embedding = self.positional_matrix[pos]
+        return embedding + position_embedding
 
 
-with open('./shakespeare.txt') as f:
-    text = f.read()
-    text = clean_text(text)
-    tokens = tokenize(text)
-    seq = get_sequences(tokens)
-    counts = count_tokens(tokens)
-    counts = filter_n(counts)
-    sorted_tokens = sort_tokens_by_count(counts)
-    token_to_id, id_to_token = gen_ids(sorted_tokens)
-    print(embed(seq[0], token_to_id))
-
+    def backwards(self, grad, tokens):
+        for i, token in enumerate(tokens):
+            if token not in self.token_to_id:
+                id = self.token_to_id[UNKNOWN_TOKEN]
+            else:
+                id = self.token_to_id[token]
+            self.embedding_matrix[id] -= self.lr * grad[i]
