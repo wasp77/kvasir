@@ -199,3 +199,15 @@ class FeedForwardNetwork():
         self.input_layer.update_weights(scaling_factor=scaling_factor)
         self.hidden_layer.update_weights(scaling_factor=scaling_factor)
         self.output_layer.update_weights(scaling_factor=scaling_factor)
+
+class CategoricalCrossEntropyLoss():
+    def calc_loss(self, output, y_true):
+        self.y_pred = softmax(output)
+        self.y_true = y_true
+        self.loss = -np.sum(self.y_true * np.log(self.y_pred + 1e-9))
+        return self.loss
+
+    def get_grad(self):
+        return self.y_pred - self.y_true
+
+
