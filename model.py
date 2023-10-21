@@ -244,11 +244,11 @@ class SimpleTransformer():
         X = self.attention_head.forward(embeddings) + embeddings
         X = self.norm_layer1.forward(X)
         X = self.feed_forward.forward(X)
-        X = self.norm_layer2.forward(X)
+        # X = self.norm_layer2.forward(X)
         return X
 
     def backwards(self, grad):
-        grad = self.norm_layer2.backwards(grad)
+        # grad = self.norm_layer2.backwards(grad)
         grad = self.feed_forward.backwards(grad)
         grad = self.norm_layer1.backwards(grad)
         grad = self.attention_head.backwards(grad)
