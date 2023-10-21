@@ -141,14 +141,17 @@ class LinearLayer():
         self.lr = lr
         # He initialization.
         self.W = np.random.randn(rows, columns) * np.sqrt(2. / rows)
+        self.b = np.zeros((1, columns))
         self.activation = activation
         self.temp_grad = None
+        self.temp_grad_b = None
 
     def forward(self, X):
         self.X = X
+        Z = np.dot(X, self.W) + self.b
         if self.activation:
-            return self.activation(np.dot(X, self.W))
-        return np.dot(X, self.W)
+            return self.activation(Z)
+        return Z
 
     def backwards(self, grad):
         if self.activation:
@@ -158,12 +161,16 @@ class LinearLayer():
             dz = grad
 
         dW = np.dot(self.X.T, dz)
+        db = np.sum(dz, axis=0, keepdims=True)
         self.temp_grad = dW
+        self.temp_grad_b = db
         return np.dot(self.W, dz.T).T
 
     def update_weights(self, scaling_factor):
         self.temp_grad *= scaling_factor
         self.W -= self.lr * self.temp_grad
+        self.temp_grad_b *= scaling_factor
+        self.b -= self.lr * self.temp_grad_b
 
 
 relu_activation = ActivationFunc(
