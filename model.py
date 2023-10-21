@@ -43,16 +43,18 @@ class AttentionHead():
         self.lr = lr
         self.dk = dk
         self.d_model = d_model
+        limit = np.sqrt(1. / d_model)
 
-        self.Wq = np.random.rand(d_model, dk)
-        self.Wk = np.random.rand(d_model, dk)
-        self.Wv = np.random.rand(d_model, dk)
+        self.Wq = np.random.uniform(-limit, limit, (d_model, 3 * d_model))
+        self.Wk = np.random.uniform(-limit, limit, (d_model, 3 * d_model))
+        self.Wv = np.random.uniform(-limit, limit, (d_model, d_model))
 
         self.temp_q_grad = None
         self.temp_k_grad = None
         self.temp_v_grad = None
 
     def forward(self, X):
+        T, C = X.shape
         self.X = X
         self.Q = np.dot(X, self.Wq)
         self.K = np.dot(X, self.Wk)
@@ -61,7 +63,7 @@ class AttentionHead():
         self.scores = np.dot(self.Q, self.K.T)
         self.scaled_scores = self.scores / math.sqrt(self.dk)
         self.attention_weights = softmax(self.scaled_scores)
-        return np.dot(self.attention_weights, self.V)
+        return np.dot(self.attention_weights, self.V).reshape((T, C))
 
     def backwards(self, grad):
         # gradient attention_weights
