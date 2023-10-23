@@ -33,7 +33,7 @@ if __name__ == "__main__":
     loss_func = CategoricalCrossEntropyLoss()
     token_mapping, id_to_token = model.get_token_mapping()
 
-    for epoch in range(500):
+    for epoch in range(1000):
         epoch_loss = 0
         for seq in seqs:
             out = model.forward(seq=seq)
