@@ -62,6 +62,10 @@ class AttentionHead():
 
         self.scores = np.dot(self.Q, self.K.T)
         self.scaled_scores = self.scores / math.sqrt(self.dk)
+
+        bias = np.tril(np.ones((T, T)))
+        self.scaled_scores = np.where(bias == 0, float('-inf'), self.scaled_scores)
+
         self.attention_weights = softmax(self.scaled_scores)
         return np.dot(self.attention_weights, self.V).reshape((T, C))
 
